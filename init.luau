@@ -1,8 +1,8 @@
 local DataStoreService = game:GetService("DataStoreService")
 
-local Util = require(game.ReplicatedStorage.Packages.Util)
-local Promise = require(game.ReplicatedStorage.Packages.Promise)
-local Trove = require(game.ReplicatedStorage.Packages.Trove)
+local Util = require(script.Parent.Util)
+local Promise = require(script.Parent.Promise)
+local Trove = require(script.Parent.Trove)
 
 
 local databases: {[string]: Database} = {}

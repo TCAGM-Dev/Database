@@ -1,0 +1,11 @@
+[package]
+name = "tcagm-dev/database"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "server"
+exclude = ["Packages"]
+
+[dependencies]
+Util = "tcagm-dev/util@0.1.4"
+Trove = "sleitnick/trove@1.4.0"
+Promise = "evaera/promise@4.0.0"

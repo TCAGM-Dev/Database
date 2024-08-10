@@ -9,3 +9,4 @@ exclude = ["Packages"]
 Util = "tcagm-dev/util@0.1.4"
 Trove = "sleitnick/trove@1.4.0"
 Promise = "evaera/promise@4.0.0"
+ScriptableEvent = "tcagm-dev/scriptableevent@0.1.0"

@@ -3,6 +3,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local Util = require(script.Parent.Util)
 local Promise = require(script.Parent.Promise)
 local Trove = require(script.Parent.Trove)
+local ScriptableEvent = require(script.Parent.ScriptableEvent)
 
 
 local databases: {[string]: Database} = {}
@@ -16,16 +17,16 @@ type Data = {[string]: any}
 
 export type DatabaseRecord = {
     Player: Player,
-    Loaded: RBXScriptSignal,
-    GetValueChangedEvent: (self: DatabaseRecord, key: string) -> RBXScriptSignal,
+    Loaded: ScriptableEvent.Signal<DatabaseRecord>,
+    GetValueChangedEvent: (self: DatabaseRecord, key: string) -> ScriptableEvent.Signal<any, any>,
     GetDatabase: () -> Database,
     Load: (self: DatabaseRecord) -> DatabaseRecord,
     Save: (self: DatabaseRecord, data: Data?) -> nil,
     IsLoaded: (self: DatabaseRecord) -> boolean,
     GetValue: (self: DatabaseRecord, key: string) -> any?,
     SetValue: (self: DatabaseRecord, key: string, value: any) -> nil,
-    _valueChangedEvents: {[string]: BindableEvent},
-    _loadedEvent: BindableEvent,
+    _valueChangedEvents: {[string]: ScriptableEvent.ScriptableEvent<any, any>},
+    _loadedEvent: ScriptableEvent.ScriptableEvent<DatabaseRecord>,
     _databaseName: string,
     _data: Data?
 }
@@ -38,8 +39,8 @@ function DatabaseRecord._new(player: Player, database: Database): DatabaseRecord
         _valueChangedEvents = {}
     }, DatabaseRecord)
 
-    self._loadedEvent = self._trove:Add(Instance.new("BindableEvent") :: any)
-    self.Loaded = self._loadedEvent.Event
+    self._loadedEvent = self._trove:Add(ScriptableEvent.new())
+    self.Loaded = self._loadedEvent.Signal
 
     return self :: DatabaseRecord
 end
@@ -97,20 +98,22 @@ function DatabaseRecord:SetValue(key: string, value: any)
     if self._data == nil then
         return
     end
-    local event = self._valueChangedEvents[key]
-    if event then
-        event:Fire(value)
+    if value ~= self._data[key] then
+        local event = self._valueChangedEvents[key]
+        if event then
+            event:Fire(self._data[key], value)
+        end
     end
     self._data[key] = value
 end
 
-function DatabaseRecord:GetValueChangedEvent(key: string): RBXScriptSignal
+function DatabaseRecord:GetValueChangedEvent(key: string): ScriptableEvent.Signal<any, any>
     local event = self._valueChangedEvents[key]
     if not event then
-        event = self._trove:Add(Instance.new("BindableEvent"))
+        event = self._trove:Add(ScriptableEvent.new())
         self._valueChangedEvents[key] = event
     end
-    return event.Event
+    return event.Signal
 end
 
 
@@ -150,8 +153,8 @@ export type Database = {
     RemoveRecord: (self: Database, player: Player) -> nil,
     GetAllRecords: (self: Database) -> {DatabaseRecord},
     Settings: DatabaseSettings,
-    RecordLoaded: RBXScriptSignal,
-    _recordLoadedEvent: BindableEvent,
+    RecordLoaded: ScriptableEvent.Signal<DatabaseRecord>,
+    _recordLoadedEvent: ScriptableEvent.ScriptableEvent<DatabaseRecord>,
     _datastore: GlobalDataStore,
     _records: {[Player]: DatabaseRecord},
     _autosaveThread: thread?
@@ -176,8 +179,8 @@ function Database.new(name: string, settings: DatabaseSettings?): Database
         end) :: any)
     end
 
-    self._recordLoadedEvent = self._trove:Add(Instance.new("BindableEvent") :: any)
-    self.RecordLoaded = self._recordLoadedEvent.Event
+    self._recordLoadedEvent = self._trove:Add(ScriptableEvent.new())
+    self.RecordLoaded = self._recordLoadedEvent.Signal
 
     databases[name] = self :: Database
     return self :: Database
@@ -189,7 +192,7 @@ function Database:CreateRecord(player: Player)
     end
     local record = self._trove:Add(DatabaseRecord._new(player, self :: Database))
     self._records[player] = record
-    self._trove:Add(record.Loaded:Connect(function(...)
+    self._trove:Add(record.Loaded:Once(function(...)
         self._recordLoadedEvent:Fire(...)
     end))
     return record

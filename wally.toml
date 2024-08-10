@@ -1,6 +1,6 @@
 [package]
 name = "tcagm-dev/database"
-version = "0.2.1"
+version = "0.2.2"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "server"
 exclude = ["Packages"]
@@ -9,4 +9,4 @@ exclude = ["Packages"]
 Util = "tcagm-dev/util@0.1.4"
 Trove = "sleitnick/trove@1.4.0"
 Promise = "evaera/promise@4.0.0"
-ScriptableEvent = "tcagm-dev/scriptableevent@0.1.0"
+ScriptableEvent = "tcagm-dev/scriptableevent@0.1.1"

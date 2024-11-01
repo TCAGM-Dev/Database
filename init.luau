@@ -44,14 +44,20 @@ function DatabaseRecord._new(player: Player, database: Database): DatabaseRecord
 
     return self :: DatabaseRecord
 end
+
+-- Returns the associated <code>Database</code> object
 function DatabaseRecord:GetDatabase(): Database
     return databases[self._databaseName]
 end
 
+-- Destroys and removes the record from the <code>Database</code>
 function DatabaseRecord:Destroy()
     self._trove:Clean()
+    self:GetDatabase():RemoveRecord(self.Player)
 end
 
+-- Loads the data for this record
+-- Overwrites it's current data with data from the <code>Datastore</code>
 function DatabaseRecord:Load(): DatabaseRecord
     local database = self:GetDatabase()
     local _success, data = Promise.retryWithDelay(Promise.promisify(function()
@@ -75,6 +81,8 @@ function DatabaseRecord:Load(): DatabaseRecord
 
     return self :: DatabaseRecord
 end
+
+-- Saves all current data to the <code>Datastore</code>
 function DatabaseRecord:Save(data: Data?)
     data = data or self._data
     local database = self:GetDatabase()
@@ -85,15 +93,20 @@ function DatabaseRecord:Save(data: Data?)
     end)
 end
 
+-- Returns whether the record is currently loaded (contains data)
 function DatabaseRecord:IsLoaded(): boolean
     return self._data ~= nil
 end
+
+-- Retrieves a key's value from the <code>Record</code>'s data
 function DatabaseRecord:GetValue(key: string): any?
     if self._data == nil then
         return
     end
     return self._data[key]
 end
+
+-- Sets a key's value in the <code>Record</code>
 function DatabaseRecord:SetValue(key: string, value: any)
     if self._data == nil then
         return
@@ -107,6 +120,7 @@ function DatabaseRecord:SetValue(key: string, value: any)
     self._data[key] = value
 end
 
+-- Returns an event which fires when the <code>Record</code> is loaded
 function DatabaseRecord:GetValueChangedEvent(key: string): ScriptableEvent.Signal<any, any>
     local event = self._valueChangedEvents[key]
     if not event then
@@ -160,6 +174,8 @@ export type Database = {
     _autosaveThread: thread?
 }
 
+-- Creates a new <code>Database</code> for a given <code>Datastore</code>
+-- Accepts a <code>DatabaseSettings</code> dictionary
 function Database.new(name: string, settings: DatabaseSettings?): Database
     local self = setmetatable({
         Name = name,
@@ -186,6 +202,7 @@ function Database.new(name: string, settings: DatabaseSettings?): Database
     return self :: Database
 end
 
+-- Creates a new record for the given <code>Player</code> if it doesn't exist yet
 function Database:CreateRecord(player: Player)
     if self._records[player] ~= nil then
         return
@@ -197,9 +214,13 @@ function Database:CreateRecord(player: Player)
     end))
     return record
 end
+
+-- Returns the <code>Record</code> associated with the given <code>Player</code> if it exists
 function Database:GetRecord(player: Player): DatabaseRecord?
     return self._records[player]
 end
+
+-- Returns the <code>Record</code> associated with the given <code>Player</code> while creating one if it doesn't exist yet
 function Database:GetOrCreateRecord(player: Player): DatabaseRecord
     local record = self:GetRecord(player)
     if not record then
@@ -207,6 +228,8 @@ function Database:GetOrCreateRecord(player: Player): DatabaseRecord
     end
     return record
 end
+
+-- Removes (unloads) the <code>Record</code> associated with the given <code>Player</code> if it exists
 function Database:RemoveRecord(player: Player)
     local record = self._records[player]
     if record then
@@ -215,10 +238,12 @@ function Database:RemoveRecord(player: Player)
     end
 end
 
+-- Returns all currently loaded <code>Record</code>s
 function Database:GetAllRecords(): {DatabaseRecord}
     return Util.objectValues(self._records)
 end
 
+-- Destroys the <code>Database</code> and all of it's associated <code>Record</code>s
 function Database:Destroy()
     self._trove:Clean()
     databases[self.Name] = nil

@@ -50,10 +50,10 @@ function DatabaseRecord:GetDatabase(): Database
     return databases[self._databaseName]
 end
 
--- Destroys and removes the record from the <code>Database</code>
+-- Destroys the record
+-- <strong>Does not remove the record</strong> from the <code>Database</code>
 function DatabaseRecord:Destroy()
     self._trove:Clean()
-    self:GetDatabase():RemoveRecord(self.Player)
 end
 
 -- Loads the data for this record
